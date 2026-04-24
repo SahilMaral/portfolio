@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VALORANT // 3D Tactical Interface</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        :root {
+            --val-red: #ff4655;
+            --val-dark: #0f1923;
+            --val-blue: #4cc9f0;
+            --val-white: #ece8e1;
+        }
+
+        /* Force hide system cursor */
+        * {
+            cursor: none !important;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--val-dark);
+            font-family: 'Inter', sans-serif;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        .valorant-font {
+            font-family: 'Anton', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+        }
+
+        .mono-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Skew Utilities */
+        .skew-btn {
+            transform: skew(-12deg);
+        }
+
+        .skew-inner {
+            transform: skew(12deg);
+        }
+
+        /* Glitch Animation */
+        @keyframes glitch {
+            0% {
+                transform: translate(0);
+            }
+
+            20% {
+                transform: translate(-3px, 2px);
+            }
+
+            40% {
+                transform: translate(-3px, -2px);
+            }
+
+            60% {
+                transform: translate(3px, 2px);
+            }
+
+            80% {
+                transform: translate(3px, -2px);
+            }
+
+            100% {
+                transform: translate(0);
+            }
+        }
+
+        .hover-glitch:hover {
+            animation: glitch 0.25s infinite;
+            text-shadow: 2px 0 var(--val-blue), -2px 0 var(--val-red);
+        }
+
+        /* Custom Reticle */
+        #reticle {
+            width: 44px;
+            height: 44px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transition: transform 0.1s ease-out, border-color 0.2s, width 0.3s, height 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #reticle::before,
+        #reticle::after {
+            content: '';
+            position: absolute;
+            background: white;
+        }
+
+        #reticle::before {
+            width: 1px;
+            height: 12px;
+        }
+
+        #reticle::after {
+            width: 12px;
+            height: 1px;
+        }
+
+        /* Scanline effect */
+        .scanline {
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(to bottom, transparent, rgba(255, 70, 85, 0.08), transparent);
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 50;
+            pointer-events: none;
+            animation: scan 5s linear infinite;
+        }
+
+        @keyframes scan {
+            0% {
+                top: -10%;
+            }
+
+            100% {
+                top: 110%;
+            }
+        }
+
+        /* Tactical Brackets */
+        .border-bracket {
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .border-bracket::before,
+        .border-bracket::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .bracket-tl::before {
+            top: -6px;
+            left: -6px;
+            border-right: 0;
+            border-bottom: 0;
+        }
+
+        .bracket-tr::after {
+            top: -6px;
+            right: -6px;
+            border-left: 0;
+            border-bottom: 0;
+        }
+
+        .border-bracket:hover::before,
+        .border-bracket:hover::after {
+            border-color: var(--val-red);
+            width: 50px;
+            height: 50px;
+            filter: drop-shadow(0 0 8px var(--val-red));
+        }
+
+        /* Scanning line inside cards */
+        .card-scanner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--val-red);
+            box-shadow: 0 0 15px var(--val-red);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .group:hover .card-scanner {
+            opacity: 0.5;
+            animation: card-scan 2s linear infinite;
+        }
+
+        @keyframes card-scan {
+            0% {
+                top: 0%;
+            }
+
+            100% {
+                top: 100%;
+            }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--val-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--val-red);
+        }
+
+        .btn-ghost-border {
+            position: absolute;
+            inset: 0;
+            border: 1px solid var(--val-red);
+            opacity: 0;
+            transform: translate(0, 0);
+            transition: all 0.3s ease;
+        }
+
+        .skew-btn:hover .btn-ghost-border {
+            opacity: 0.5;
+            transform: translate(8px, 8px);
+        }
+
+        /* Chat Specific Styles */
+        #chat-terminal {
+            transform: skew(-5deg);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .chat-msg {
+            border-left: 2px solid var(--val-red);
+            background: rgba(255, 255, 255, 0.03);
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            font-size: 11px;
+            animation: slideIn 0.2s ease-out forwards;
+        }
+
+        .chat-msg.system {
+            border-left-color: var(--val-blue);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .loading-dots:after {
+            content: ' .';
+            animation: dots 1.5s steps(5, end) infinite;
+        }
+
+        @keyframes dots {
+
+            0%,
+            20% {
+                content: ' .';
+            }
+
+            40% {
+                content: ' ..';
+            }
+
+            60% {
+                content: ' ...';
+            }
+
+            80%,
+            100% {
+                content: '';
+            }
+        }
+
+        /* Background animated text */
+        .bg-scroll-text {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            white-space: nowrap;
+        }
+
+        /* AI Briefing Transition */
+        #ai-briefing-modal {
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="reticle"></div>
+    <div class="scanline"></div>
+    <div id="canvas-container" class="fixed inset-0 z-0"></div>
+
+    <!-- AI Briefing Modal -->
+    <div id="ai-briefing-modal"
+        class="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-8 opacity-0 invisible pointer-events-none">
+        <div
+            class="max-w-2xl w-full border-bracket bracket-tl bracket-tr bg-white/[0.05] backdrop-blur-2xl p-12 relative pointer-events-auto">
+            <button onclick="closeModal()"
+                class="absolute top-6 right-6 text-white/50 hover:text-white transition-colors mono-font text-sm uppercase font-black">
+                [ Close_Terminal ]
+            </button>
+            <div class="flex items-center gap-4 mb-8">
+                <div class="w-12 h-[2px] bg-[#ff4655]"></div>
+                <span class="text-[#ff4655] font-black text-xs tracking-[0.5em] uppercase">Intelligence Briefing
+                    ✨</span>
+            </div>
+            <div id="ai-content" class="mono-font text-sm leading-relaxed text-gray-300 min-h-[200px]">
+                <!-- AI Content Injected Here -->
+            </div>
+            <div class="mt-12 flex justify-end">
+                <div class="mono-font text-[9px] text-white/20 tracking-widest uppercase">Encryption_Level:
+                    Gemini_Flash_2.5</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="relative z-10 w-full">
+
+        <!-- HUD Overlay -->
+        <div class="fixed inset-0 pointer-events-none z-50 p-6 md:p-10">
+            <header class="flex justify-between items-start pointer-events-auto">
+                <div class="group">
+                    <svg class="w-12 h-12 fill-[#ff4655] transition-all group-hover:scale-110" viewBox="0 0 100 100">
+                        <path d="M10 20 L45 20 L35 80 L0 80 Z" />
+                        <path d="M55 20 L90 20 L100 80 L65 80 Z" />
+                    </svg>
+                    <div
+                        class="mt-2 mono-font text-[9px] text-[#ff4655] font-black tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                        // PROTOCOL_v4.0
+                    </div>
+                </div>
+                <div class="flex flex-col items-end mono-font text-[10px] space-y-1">
+                    <div class="flex items-center gap-2">
+                        <span class="opacity-40">SECTOR:</span>
+                        <span class="font-bold">RANGE_PRACTICE_01</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="opacity-40">SCAN_DEPTH:</span>
+                        <span id="coord-y" class="text-[#4cc9f0] font-bold">0.00</span>
+                    </div>
+                    <div class="h-1 w-24 bg-white/10 mt-4 overflow-hidden">
+                        <div id="loading-bar" class="h-full bg-[#ff4655] w-0"></div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Chatbot Terminal Interface -->
+            <aside class="absolute right-10 bottom-10 w-80 pointer-events-auto">
+                <div id="chat-toggle" onclick="toggleChat()"
+                    class="flex items-center justify-between bg-white/[0.05] hover:bg-white/[0.1] border-l-4 border-[#ff4655] p-3 mb-2 transition-all group cursor-pointer skew-btn">
+                    <div class="skew-inner flex items-center gap-3">
+                        <div class="w-2 h-2 bg-[#ff4655] animate-pulse"></div>
+                        <span class="mono-font text-[10px] font-black tracking-widest uppercase">V.E.R.A. //
+                            TACTICAL_COMMS ✨</span>
+                    </div>
+                    <span id="chat-arrow" class="skew-inner text-[10px] opacity-40 transition-transform">▲</span>
+                </div>
+
+                <div id="chat-container" class="h-0 opacity-0 overflow-hidden transition-all duration-300">
+                    <div id="chat-terminal"
+                        class="bg-white/[0.05] backdrop-blur-xl border border-white/10 p-4 h-96 flex flex-col">
+                        <div id="chat-messages" class="flex-grow overflow-y-auto mb-4 pr-2 custom-scrollbar mono-font">
+                            <div class="chat-msg system">
+                                <span class="text-[#ff4655] font-bold">[V.E.R.A.]:</span> PROTOCOL_V4.0 ONLINE. AWAITING
+                                INSTRUCTIONS.
+                            </div>
+                        </div>
+                        <div class="relative">
+                            <input id="chat-input" type="text" placeholder="QUERY_V.E.R.A..."
+                                class="w-full bg-white/5 border border-white/20 p-3 text-[11px] mono-font focus:border-[#ff4655] outline-none transition-colors pr-10">
+                            <button onclick="sendChatMessage()"
+                                class="absolute right-2 top-1/2 -translate-y-1/2 text-[#ff4655] hover:scale-110 transition-transform">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path
+                                        d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z">
+                                    </path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Gemini Assistant Sidebar (Legacy Section) -->
+            <aside
+                class="absolute right-10 top-1/2 -translate-y-1/2 hidden xl:flex flex-col gap-6 w-72 pointer-events-auto">
+                <div class="border-bracket bracket-tl bracket-tr p-6 bg-white/[0.05] backdrop-blur-lg">
+                    <h4 class="mono-font text-[10px] font-black text-[#ff4655] mb-3 tracking-[0.2em] uppercase">//
+                        STRATEGY_PLANNER ✨</h4>
+                    <p class="text-[10px] text-white/40 mb-4 leading-tight">Describe a scenario to receive an AI
+                        tactical breakdown.</p>
+                    <input id="scenario-input" type="text" placeholder="e.g. 1v2 Ascent A Site"
+                        class="w-full bg-white/5 border border-white/10 p-2 text-[10px] mono-font focus:border-[#ff4655] outline-none transition-colors placeholder:text-white/20 mb-3">
+                    <button onclick="planStrategy()"
+                        class="w-full bg-[#ff4655] text-white py-2 text-[10px] font-black tracking-widest skew-btn group overflow-hidden">
+                        <span class="skew-inner relative z-10 block">ANALYZE ✨</span>
+                    </button>
+                </div>
+            </aside>
+
+            <aside class="absolute left-10 top-1/2 -translate-y-1/2 hidden lg:block opacity-20">
+                <p class="bg-scroll-text mono-font text-[9px] tracking-[1em] uppercase">VALORANT // DEFY THE LIMITS //
+                    RANGE</p>
+            </aside>
+
+            <footer class="absolute bottom-10 left-10 flex flex-col gap-2">
+                <div class="flex items-center gap-4">
+                    <div class="w-1 h-16 bg-white/10 relative">
+                        <div id="scroll-progress"
+                            class="w-full bg-[#ff4655] h-0 absolute bottom-0 transition-all duration-300"></div>
+                    </div>
+                    <p class="mono-font text-[9px] text-white/30 tracking-[0.5em] uppercase vertical-text">
+                        Database_Buffer_Status</p>
+                </div>
+            </footer>
+        </div>
+
+        <!-- Section 1: Hero -->
+        <section id="hero" class="min-h-screen flex items-center px-8 md:px-24">
+            <div class="max-w-4xl pt-20 relative">
+                <div
+                    class="absolute -top-16 -left-16 text-[220px] font-black text-white/[0.02] select-none pointer-events-none valorant-font tracking-tighter">
+                    RANGE
+                </div>
+                <div class="flex items-center gap-4 mb-8 pointer-events-auto group cursor-default">
+                    <div class="h-[2px] w-16 bg-[#ff4655] group-hover:w-32 transition-all duration-500"></div>
+                    <p class="text-[#ff4655] font-black tracking-[0.5em] text-xs uppercase italic">Radianite Signal
+                        Found</p>
+                </div>
+                <h1
+                    class="valorant-font text-8xl md:text-[160px] leading-[0.8] mb-10 select-none hover-glitch pointer-events-auto">
+                    READY<br /><span class="text-[#ff4655]">UP</span>
+                </h1>
+                <p
+                    class="text-gray-400 text-sm md:text-xl max-w-lg mb-14 leading-relaxed mono-font uppercase tracking-tighter pointer-events-auto hover:text-white transition-colors duration-300">
+                    The Range is an isolated facility designed for the testing of agents and the mastery of
+                    Radianite-based tactical equipment.
+                </p>
+                <div class="flex gap-8 items-center pointer-events-auto">
+                    <button
+                        class="bg-[#ff4655] text-white px-12 py-6 font-black uppercase tracking-widest text-sm skew-btn relative group overflow-hidden">
+                        <div class="btn-ghost-border"></div>
+                        <span class="skew-inner relative z-10 flex items-center gap-3">
+                            ENTER RANGE
+                            <svg class="w-4 h-4 transition-transform group-hover:translate-x-2" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-width="3"></path>
+                            </svg>
+                        </span>
+                        <div
+                            class="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-0 transition-transform duration-500 skew-x-[-12deg]">
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Agent Intel -->
+        <section id="agents" class="min-h-screen flex flex-col justify-center px-8 md:px-24 mb-20">
+            <div class="max-w-7xl w-full mx-auto">
+                <div class="flex items-end justify-between mb-8">
+                    <h2 class="valorant-font text-6xl md:text-[120px] leading-none hover-glitch cursor-default">DOSSIERS
+                    </h2>
+                    <div class="flex flex-col items-end mono-font text-[10px] text-white/30 space-y-1 pb-4">
+                        <span>SEARCHING_BIOMETRICS...</span>
+                        <span class="text-[#4cc9f0]">TARGET_LOCKED</span>
+                    </div>
+                </div>
+                <div class="h-1 w-full bg-gradient-to-r from-red-500 via-red-500/50 to-transparent mb-16"></div>
+
+                <div class="grid md:grid-cols-2 gap-16">
+                    <!-- Agent Card JETT -->
+                    <div
+                        class="border-bracket bracket-tl bracket-tr p-12 bg-white/[0.02] backdrop-blur-xl group hover:bg-white/[0.05] transition-all duration-700 cursor-default relative overflow-hidden">
+                        <div class="card-scanner"></div>
+                        <div class="flex items-center gap-4 mb-8">
+                            <div class="w-16 h-[2px] bg-[#ff4655] group-hover:w-24 transition-all duration-500"></div>
+                            <span class="text-[#ff4655] font-black text-xs tracking-[0.4em] uppercase">Entry
+                                Specialist</span>
+                        </div>
+                        <h3
+                            class="text-6xl font-black mb-8 uppercase italic group-hover:translate-x-6 transition-transform duration-500">
+                            JETT</h3>
+                        <p
+                            class="text-gray-400 text-base leading-relaxed mb-12 group-hover:text-white transition-colors duration-500">
+                            Equipped with wind-based abilities, Jett specializes in rapid entry and vertical movement,
+                            making her a primary threat in skirmish scenarios.
+                        </p>
+                        <div class="flex flex-col gap-4">
+                            <button onclick="getAgentStrategy('Jett')"
+                                class="w-full border-2 border-[#ff4655] py-4 bg-red-500/5 hover:bg-red-500 transition-all font-black text-xs tracking-[0.4em] uppercase">
+                                Tactical_Intelligence ✨
+                            </button>
+                            <div class="flex gap-4">
+                                <div
+                                    class="w-14 h-14 border border-white/10 flex items-center justify-center font-black text-xl hover:bg-[#ff4655] hover:border-[#ff4655] transition-all cursor-pointer">
+                                    Q</div>
+                                <div
+                                    class="w-14 h-14 border border-white/10 flex items-center justify-center font-black text-xl hover:bg-[#ff4655] hover:border-[#ff4655] transition-all cursor-pointer">
+                                    E</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Agent Card OMEN -->
+                    <div
+                        class="border-bracket bracket-tl bracket-tr p-12 bg-white/[0.02] backdrop-blur-xl group hover:bg-white/[0.05] transition-all duration-700 cursor-default relative overflow-hidden">
+                        <div class="card-scanner"
+                            style="background: var(--val-blue); box-shadow: 0 0 15px var(--val-blue);"></div>
+                        <div class="flex items-center gap-4 mb-8">
+                            <div class="w-16 h-[2px] bg-[#4cc9f0] group-hover:w-24 transition-all duration-500"></div>
+                            <span class="text-[#4cc9f0] font-black text-xs tracking-[0.4em] uppercase">Vision
+                                Control</span>
+                        </div>
+                        <h3
+                            class="text-6xl font-black mb-8 uppercase italic group-hover:translate-x-6 transition-transform duration-500">
+                            OMEN</h3>
+                        <p
+                            class="text-gray-400 text-base leading-relaxed mb-12 group-hover:text-white transition-colors duration-500">
+                            Manipulating the field of vision through paranoia and dark cover, Omen thrives in
+                            misdirecting hostiles through trans-dimensional movement.
+                        </p>
+                        <div class="flex flex-col gap-4">
+                            <button onclick="getAgentStrategy('Omen')"
+                                class="w-full border-2 border-[#4cc9f0] py-4 bg-blue-500/5 hover:bg-blue-500 transition-all font-black text-xs tracking-[0.4em] uppercase">
+                                Tactical_Intelligence ✨
+                            </button>
+                            <div class="flex gap-4">
+                                <div
+                                    class="w-14 h-14 border border-white/10 flex items-center justify-center font-black text-xl hover:bg-[#4cc9f0] hover:border-[#4cc9f0] transition-all cursor-pointer">
+                                    Q</div>
+                                <div
+                                    class="w-14 h-14 border border-white/10 flex items-center justify-center font-black text-xl hover:bg-[#4cc9f0] hover:border-[#4cc9f0] transition-all cursor-pointer">
+                                    E</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Final Call to Action -->
+        <section class="py-48 bg-[#ff4655] text-[#0f1923] relative overflow-hidden group">
+            <div class="absolute inset-0 opacity-10 pointer-events-none overflow-hidden">
+                <span
+                    class="valorant-font text-[450px] leading-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap group-hover:scale-110 transition-transform duration-[2s]">VALORANT</span>
+            </div>
+            <div class="container mx-auto px-8 text-center relative z-10">
+                <h2
+                    class="valorant-font text-7xl md:text-[180px] mb-12 leading-none select-none group-hover:scale-105 transition-transform duration-1000 italic">
+                    READY?</h2>
+                <button
+                    class="bg-[#0f1923] text-white px-24 py-10 font-black uppercase tracking-[0.5em] text-2xl skew-btn hover:bg-white hover:text-[#ff4655] transition-all duration-300 relative group/btn overflow-hidden">
+                    <span class="skew-inner relative z-10">JOIN NOW</span>
+                    <div
+                        class="absolute inset-0 bg-white/30 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700 skew-x-[-12deg]">
+                    </div>
+                </button>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="bg-[#0f1923] py-32 px-8 border-t border-white/5 relative z-10">
+            <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-16">
+                <div class="flex items-center gap-10">
+                    <svg class="w-16 h-16 fill-white/10 hover:fill-[#ff4655] transition-all cursor-pointer hover:scale-110"
+                        viewBox="0 0 100 100">
+                        <path d="M10 20 L45 20 L35 80 L0 80 Z" />
+                        <path d="M55 20 L90 20 L100 80 L65 80 Z" />
+                    </svg>
+                    <div class="mono-font border-l border-white/10 pl-8">
+                        <p class="text-[11px] font-bold text-white/20 uppercase tracking-[0.3em] mb-2">© 2024 RIOT
+                            GAMES, INC.</p>
+                        <p class="text-[9px] font-black text-[#ff4655] uppercase tracking-[0.6em]">
+                            SYSTEM_VERSION_ALPHA_v1.0</p>
+                    </div>
+                </div>
+                <div class="flex gap-16 text-[11px] font-black uppercase tracking-widest text-white/40">
+                    <a href="#"
+                        class="hover:text-[#ff4655] transition-colors border-b-2 border-transparent hover:border-[#ff4655] pb-2">Privacy</a>
+                    <a href="#"
+                        class="hover:text-[#ff4655] transition-colors border-b-2 border-transparent hover:border-[#ff4655] pb-2">Terms</a>
+                    <a href="#"
+                        class="hover:text-[#ff4655] transition-colors border-b-2 border-transparent hover:border-[#ff4655] pb-2">Support</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        const apiKey = ""; // Empty string as per instructions
+
+        // --- GEMINI API INTEGRATION ---
+        async function fetchGemini(prompt, systemInstruction = "You are V.E.R.A., a professional VALORANT tactical assistant. Provide concise, high-impact tactical advice in a military/tech briefing style. Use all-caps for emphasis. Maximum 4 short bullet points.") {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { parts: [{ text: systemInstruction }] }
+            };
+
+            const maxRetries = 5;
+            let attempt = 0;
+
+            while (attempt < maxRetries) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                    const data = await response.json();
+                    return data.candidates?.[0]?.content?.parts?.[0]?.text || "NO DATA RECEIVED.";
+                } catch (error) {
+                    attempt++;
+                    if (attempt === maxRetries) throw error;
+                    await new Promise(r => setTimeout(r, Math.pow(2, attempt) * 1000));
+                }
+            }
+        }
+
+        // --- CHAT FUNCTIONALITY ---
+        let isChatOpen = false;
+        function toggleChat() {
+            const container = document.getElementById('chat-container');
+            const arrow = document.getElementById('chat-arrow');
+            isChatOpen = !isChatOpen;
+
+            if (isChatOpen) {
+                container.style.height = '400px';
+                container.style.opacity = '1';
+                container.style.marginTop = '12px';
+                arrow.style.transform = 'rotate(180deg)';
+                document.getElementById('chat-input').focus();
+            } else {
+                container.style.height = '0';
+                container.style.opacity = '0';
+                container.style.marginTop = '0';
+                arrow.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        function appendMessage(role, text) {
+            const msgs = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+            div.className = `chat-msg ${role === 'system' ? 'system' : ''}`;
+            const label = role === 'user' ? '[USER]' : '[V.E.R.A.]';
+            const color = role === 'user' ? 'white' : 'var(--val-red)';
+            div.innerHTML = `<span style="color: ${color}; font-weight: 900;">${label}:</span> ${text}`;
+            msgs.appendChild(div);
+            msgs.scrollTop = msgs.scrollHeight;
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            input.value = '';
+            appendMessage('user', text);
+
+            const loadingId = 'ai-loading-' + Date.now();
+            const msgs = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+            div.id = loadingId;
+            div.className = 'chat-msg system loading-dots';
+            div.innerHTML = `<span style="color: var(--val-blue); font-weight: 900;">[V.E.R.A.]:</span> ANALYZING`;
+            msgs.appendChild(div);
+            msgs.scrollTop = msgs.scrollHeight;
+
+            try {
+                const result = await fetchGemini(text, "You are V.E.R.A., the VALORANT Protocol Tactical Assistant. Answer questions about agent lore, map strategies, or weapon stats. Keep answers tactical and professional. Maximum 3 sentences.");
+                document.getElementById(loadingId).remove();
+                appendMessage('system', result);
+            } catch (error) {
+                document.getElementById(loadingId).innerText = "[V.E.R.A.]: COMMS_FAILURE. RETRY_LATER.";
+            }
+        }
+
+        // Handle enter key in chat
+        document.getElementById('chat-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendChatMessage();
+        });
+
+        async function getAgentStrategy(agentName) {
+            const modal = document.getElementById('ai-briefing-modal');
+            const content = document.getElementById('ai-content');
+
+            modal.classList.remove('invisible');
+            modal.classList.add('opacity-100');
+            content.innerHTML = `<div class="loading-dots uppercase">ACCESSING_ENCRYPTED_DATA</div>`;
+
+            try {
+                const prompt = `Provide a unique pro-level tactical play or secret tip for the agent ${agentName}. Mention a specific map if possible.`;
+                const result = await fetchGemini(prompt);
+                content.innerText = result;
+            } catch (error) {
+                content.innerText = "FAILED TO RETRIEVE TACTICAL DATA. CONNECTION ERROR.";
+            }
+        }
+
+        async function planStrategy() {
+            const input = document.getElementById('scenario-input');
+            const scenario = input.value.trim();
+            if (!scenario) return;
+
+            const modal = document.getElementById('ai-briefing-modal');
+            const content = document.getElementById('ai-content');
+
+            modal.classList.remove('invisible');
+            modal.classList.add('opacity-100');
+            content.innerHTML = `<div class="loading-dots uppercase">ANALYZING_SCENARIO</div>`;
+
+            try {
+                const prompt = `Scenario: ${scenario}. What is the best course of action? Provide a tactical breakdown.`;
+                const result = await fetchGemini(prompt, "You are V.E.R.A., a VALORANT IGL (In-Game Leader). Provide a clear, aggressive strategy for the given scenario. Use tactical terminology.");
+                content.innerText = result;
+            } catch (error) {
+                content.innerText = "SCENARIO ANALYSIS FAILED. RETRYING_HANDSHAKE...";
+            }
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('ai-briefing-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('invisible'), 300);
+        }
+
+        // --- THREE.JS SCENE LOGIC ---
+        let scene, camera, renderer, spike, platform, shards = [];
+        let mouseX = 0, mouseY = 0;
+        let targetX = 0, targetY = 0;
+        let scrollY = 0;
+
+        const reticleEl = document.getElementById('reticle');
+        const scrollProg = document.getElementById('scroll-progress');
+        const coordYEl = document.getElementById('coord-y');
+        const loadBar = document.getElementById('loading-bar');
+
+        const init = () => {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x0f1923, 0.05);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 5, 14);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            scene.add(new THREE.AmbientLight(0xffffff, 0.2));
+
+            const redLight = new THREE.PointLight(0xff4655, 6, 50);
+            redLight.position.set(12, 12, 12);
+            scene.add(redLight);
+
+            const blueLight = new THREE.PointLight(0x4cc9f0, 4, 50);
+            blueLight.position.set(-12, 6, 6);
+            scene.add(blueLight);
+
+            platform = new THREE.Group();
+            const floorGeo = new THREE.BoxGeometry(24, 0.4, 24);
+            const floorMat = new THREE.MeshPhongMaterial({ color: 0x1a2b3b, shininess: 60 });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.position.y = -4;
+            platform.add(floor);
+
+            const crateGeo = new THREE.BoxGeometry(2.4, 2.4, 2.4);
+            const crateMat = new THREE.MeshPhongMaterial({ color: 0x0a141d, emissive: 0x4cc9f0, emissiveIntensity: 0.1 });
+
+            for (let i = 0; i < 4; i++) {
+                const crate = new THREE.Mesh(crateGeo, crateMat);
+                crate.position.set((i % 2 === 0 ? 8 : -8), -2.8, (i < 2 ? 8 : -8));
+                const wireframe = new THREE.LineSegments(new THREE.EdgesGeometry(crateGeo), new THREE.LineBasicMaterial({ color: 0x4cc9f0, transparent: true, opacity: 0.5 }));
+                crate.add(wireframe);
+                platform.add(crate);
+            }
+            scene.add(platform);
+
+            spike = new THREE.Group();
+            const spikeConeGeo = new THREE.ConeGeometry(1.4, 2.2, 4);
+            const spikeShellMat = new THREE.MeshPhongMaterial({ color: 0x0a141d, shininess: 120 });
+            const spikeTop = new THREE.Mesh(spikeConeGeo, spikeShellMat);
+            spikeTop.position.y = 1.3;
+            spike.add(spikeTop);
+            const spikeBottom = new THREE.Mesh(spikeConeGeo, spikeShellMat);
+            spikeBottom.rotation.x = Math.PI;
+            spikeBottom.position.y = -1.3;
+            spike.add(spikeBottom);
+            const spikeCore = new THREE.Mesh(new THREE.IcosahedronGeometry(0.9, 0), new THREE.MeshPhongMaterial({ color: 0xff4655, emissive: 0xff4655, emissiveIntensity: 3 }));
+            spike.add(spikeCore);
+            scene.add(spike);
+
+            const pCount = 2500;
+            const pGeo = new THREE.BufferGeometry();
+            const pPos = new Float32Array(pCount * 3);
+            for (let i = 0; i < pCount * 3; i++) pPos[i] = (Math.random() - 0.5) * 60;
+            pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+            scene.add(new THREE.Points(pGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.02, transparent: true, opacity: 0.2 })));
+
+            let load = 0;
+            const loadInterval = setInterval(() => {
+                load += Math.random() * 5;
+                if (load >= 100) { load = 100; clearInterval(loadInterval); }
+                loadBar.style.width = load + '%';
+            }, 100);
+
+            document.addEventListener('mousemove', (e) => {
+                targetX = (e.clientX / window.innerWidth - 0.5) * 2;
+                targetY = (e.clientY / window.innerHeight - 0.5) * 2;
+                reticleEl.style.left = e.clientX - 22 + 'px';
+                reticleEl.style.top = e.clientY - 22 + 'px';
+                const hoverTarget = e.target.closest('button, a, .group, .cursor-pointer, input, #chat-toggle');
+                if (hoverTarget) {
+                    reticleEl.style.width = '70px'; reticleEl.style.height = '70px';
+                    reticleEl.style.borderColor = '#ff4655'; reticleEl.style.transform = 'translate(-13px, -13px) rotate(45deg)';
+                } else {
+                    reticleEl.style.width = '44px'; reticleEl.style.height = '44px';
+                    reticleEl.style.borderColor = 'rgba(255,255,255,0.3)'; reticleEl.style.transform = 'none';
+                }
+                coordYEl.innerText = (targetY * -10).toFixed(2);
+            });
+
+            window.addEventListener('scroll', () => {
+                scrollY = window.scrollY;
+                const dH = document.documentElement.scrollHeight - window.innerHeight;
+                scrollProg.style.height = (scrollY / dH) * 100 + '%';
+            });
+
+            animate();
+        };
+
+        const animate = () => {
+            requestAnimationFrame(animate);
+            const time = Date.now() * 0.001;
+            mouseX += (targetX - mouseX) * 0.06;
+            mouseY += (targetY - mouseY) * 0.06;
+            const sn = Math.min(scrollY / 2500, 1);
+            spike.rotation.y += 0.012;
+            spike.position.y = 1.5 + Math.sin(time * 1.2) * 0.6;
+            spike.children[2].rotation.x += 0.08;
+            platform.rotation.x = mouseY * 0.12;
+            platform.rotation.z = mouseX * -0.12;
+            platform.position.y = - (sn * 6);
+            platform.position.z = - (sn * 8);
+            camera.position.x = mouseX * 2.5;
+            camera.position.y = 5 + (mouseY * -2.5);
+            camera.lookAt(0, - (sn * 3), 0);
+            renderer.render(scene, camera);
+        };
+
+        window.onload = init;
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+
+</html>

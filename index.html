@@ -4,9 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VALORANT // 3D Tactical Interface</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <title>SAHIL MARAL // Tactical Portfolio</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+    <script src="https://cdn.tailwindcss.com/3.4.1"></script>
+    <script src="https://unpkg.com/three@0.149.0/build/three.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -17,9 +18,11 @@
             --val-white: #ece8e1;
         }
 
-        /* Force hide system cursor */
-        * {
-            cursor: none !important;
+        /* Hide system cursor only on devices with hover capability */
+        @media (hover: hover) and (pointer: fine) {
+            * {
+                cursor: none !important;
+            }
         }
 
         body {
@@ -97,6 +100,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+
+        /* Hide reticle on mobile/touch */
+        @media (max-width: 768px) {
+            #reticle {
+                display: none !important;
+            }
         }
 
         #reticle::before,
@@ -265,29 +275,18 @@
         }
 
         .loading-dots:after {
-            content: ' .';
-            animation: dots 1.5s steps(5, end) infinite;
+            content: '...';
+            display: inline-block;
+            width: 0;
+            overflow: hidden;
+            vertical-align: bottom;
+            animation: move-dots 1.5s steps(4) infinite;
+            margin-left: 2px;
         }
 
-        @keyframes dots {
-
-            0%,
-            20% {
-                content: ' .';
-            }
-
-            40% {
-                content: ' ..';
-            }
-
-            60% {
-                content: ' ...';
-            }
-
-            80%,
-            100% {
-                content: '';
-            }
+        @keyframes move-dots {
+            0% { width: 0; }
+            100% { width: 1.2em; }
         }
 
         /* Background animated text */
@@ -300,6 +299,83 @@
         /* AI Briefing Transition */
         #ai-briefing-modal {
             transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .valorant-font {
+                letter-spacing: -0.01em;
+            }
+
+            section {
+                padding-left: 1.5rem !important;
+                padding-right: 1.5rem !important;
+            }
+
+            #chat-terminal {
+                transform: none;
+                height: 70vh !important;
+            }
+
+            .chat-msg {
+                font-size: 13px;
+            }
+
+            #chat-container {
+                position: fixed;
+                bottom: 80px;
+                left: 10px;
+                right: 10px;
+                z-index: 100;
+            }
+
+            #chat-toggle {
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                z-index: 101;
+                width: auto;
+                margin-bottom: 0;
+            }
+            
+            /* Section Typography */
+            h1.valorant-font {
+                font-size: 3.5rem !important;
+                line-height: 1 !important;
+            }
+            
+            h2.valorant-font {
+                font-size: 3rem !important;
+            }
+
+            .hero-bg-text {
+                font-size: 80px !important;
+                top: -30px !important;
+                left: -10px !important;
+            }
+
+            /* Buttons */
+            .flex.gap-8 {
+                gap: 1rem !important;
+                flex-direction: column;
+                align-items: flex-start !important;
+            }
+
+            .skew-btn {
+                width: 100%;
+                text-align: center;
+                justify-content: center;
+            }
+
+            /* Dossier Cards */
+            .border-bracket.p-12 {
+                padding: 1.5rem !important;
+            }
+
+            /* HUD */
+            header.flex.justify-between {
+                align-items: center !important;
+            }
         }
     </style>
 </head>
@@ -322,7 +398,7 @@
             <div class="flex items-center gap-4 mb-8">
                 <div class="w-12 h-[2px] bg-[#ff4655]"></div>
                 <span class="text-[#ff4655] font-black text-xs tracking-[0.5em] uppercase">Intelligence Briefing
-                    ✨</span>
+                    SAHIL MARAL</span>
             </div>
             <div id="ai-content" class="mono-font text-sm leading-relaxed text-gray-300 min-h-[200px]">
                 <!-- AI Content Injected Here -->
@@ -337,22 +413,22 @@
     <div class="relative z-10 w-full">
 
         <!-- HUD Overlay -->
-        <div class="fixed inset-0 pointer-events-none z-50 p-6 md:p-10">
+        <div class="fixed inset-0 pointer-events-none z-50 p-4 md:p-10">
             <header class="flex justify-between items-start pointer-events-auto">
                 <div class="group">
-                    <svg class="w-12 h-12 fill-[#ff4655] transition-all group-hover:scale-110" viewBox="0 0 100 100">
+                    <svg class="w-8 h-8 md:w-12 md:h-12 fill-[#ff4655] transition-all group-hover:scale-110" viewBox="0 0 100 100">
                         <path d="M10 20 L45 20 L35 80 L0 80 Z" />
                         <path d="M55 20 L90 20 L100 80 L65 80 Z" />
                     </svg>
                     <div
-                        class="mt-2 mono-font text-[9px] text-[#ff4655] font-black tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
-                        // PROTOCOL_v4.0
+                        class="mt-2 mono-font text-[7px] md:text-[9px] text-[#ff4655] font-black tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                        // MARAL_PROTOCOL_v1.0
                     </div>
                 </div>
                 <div class="flex flex-col items-end mono-font text-[10px] space-y-1">
                     <div class="flex items-center gap-2">
                         <span class="opacity-40">SECTOR:</span>
-                        <span class="font-bold">RANGE_PRACTICE_01</span>
+                        <span class="font-bold">PUNE_STATION_411041</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="opacity-40">SCAN_DEPTH:</span>
@@ -381,8 +457,8 @@
                         class="bg-white/[0.05] backdrop-blur-xl border border-white/10 p-4 h-96 flex flex-col">
                         <div id="chat-messages" class="flex-grow overflow-y-auto mb-4 pr-2 custom-scrollbar mono-font">
                             <div class="chat-msg system">
-                                <span class="text-[#ff4655] font-bold">[V.E.R.A.]:</span> PROTOCOL_V4.0 ONLINE. AWAITING
-                                INSTRUCTIONS.
+                                <span class="text-[#ff4655] font-bold">[V.E.R.A.]:</span> MARAL_PORTFOLIO_PROTOCOL
+                                ONLINE. WELCOME, RECRUIT.
                             </div>
                         </div>
                         <div class="relative">
@@ -419,11 +495,15 @@
             </aside>
 
             <aside class="absolute left-10 top-1/2 -translate-y-1/2 hidden lg:block opacity-20">
-                <p class="bg-scroll-text mono-font text-[9px] tracking-[1em] uppercase">VALORANT // DEFY THE LIMITS //
-                    RANGE</p>
+                <p class="bg-scroll-text mono-font text-[9px] tracking-[1em] uppercase">SAHIL MARAL // FULL STACK
+                    DEVELOPER // PUNE STATION // PROTOCOL v1.0</p>
             </aside>
 
-            <footer class="absolute bottom-10 left-10 flex flex-col gap-2">
+            <aside class="absolute right-10 top-1/2 -translate-y-1/2 hidden xl:block opacity-20">
+                <p class="bg-scroll-text mono-font text-[9px] tracking-[1em] uppercase">EXPERTISE // PHP // JAVA // C# // MYSQL // REACT // NODE</p>
+            </aside>
+
+            <footer class="absolute bottom-10 left-10 hidden md:flex flex-col gap-2">
                 <div class="flex items-center gap-4">
                     <div class="w-1 h-16 bg-white/10 relative">
                         <div id="scroll-progress"
@@ -439,29 +519,29 @@
         <section id="hero" class="min-h-screen flex items-center px-8 md:px-24">
             <div class="max-w-4xl pt-20 relative">
                 <div
-                    class="absolute -top-16 -left-16 text-[220px] font-black text-white/[0.02] select-none pointer-events-none valorant-font tracking-tighter">
-                    RANGE
+                    class="absolute -top-16 -left-16 text-[220px] font-black text-white/[0.02] select-none pointer-events-none valorant-font tracking-tighter hero-bg-text">
+                    SAHIL
                 </div>
                 <div class="flex items-center gap-4 mb-8 pointer-events-auto group cursor-default">
                     <div class="h-[2px] w-16 bg-[#ff4655] group-hover:w-32 transition-all duration-500"></div>
-                    <p class="text-[#ff4655] font-black tracking-[0.5em] text-xs uppercase italic">Radianite Signal
+                    <p class="text-[#ff4655] font-black tracking-[0.5em] text-xs uppercase italic">Web Developer Intern
                         Found</p>
                 </div>
                 <h1
-                    class="valorant-font text-8xl md:text-[160px] leading-[0.8] mb-10 select-none hover-glitch pointer-events-auto">
-                    READY<br /><span class="text-[#ff4655]">UP</span>
+                    class="valorant-font text-6xl md:text-[160px] leading-[0.8] mb-10 select-none hover-glitch pointer-events-auto">
+                    SAHIL<br /><span class="text-[#ff4655]">MARAL</span>
                 </h1>
                 <p
                     class="text-gray-400 text-sm md:text-xl max-w-lg mb-14 leading-relaxed mono-font uppercase tracking-tighter pointer-events-auto hover:text-white transition-colors duration-300">
-                    The Range is an isolated facility designed for the testing of agents and the mastery of
-                    Radianite-based tactical equipment.
+                    I have completed my education in IT. I aim to contribute my technical experience to a
+                    forward-thinking company and collaborate on user-friendly software products.
                 </p>
                 <div class="flex gap-8 items-center pointer-events-auto">
                     <button
                         class="bg-[#ff4655] text-white px-12 py-6 font-black uppercase tracking-widest text-sm skew-btn relative group overflow-hidden">
                         <div class="btn-ghost-border"></div>
                         <span class="skew-inner relative z-10 flex items-center gap-3">
-                            ENTER RANGE
+                            VIEW DOSSIER
                             <svg class="w-4 h-4 transition-transform group-hover:translate-x-2" fill="none"
                                 stroke="currentColor" viewBox="0 0 24 24">
                                 <path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-width="3"></path>
@@ -471,6 +551,18 @@
                             class="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-0 transition-transform duration-500 skew-x-[-12deg]">
                         </div>
                     </button>
+                    <a href="SAHIL_MARAL_.pdf" download
+                        class="border-2 border-white/20 hover:border-[#ff4655] text-white px-12 py-6 font-black uppercase tracking-widest text-sm skew-btn relative group overflow-hidden transition-colors">
+                        <div
+                            class="absolute inset-0 bg-[#ff4655] translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                        </div>
+                        <span class="skew-inner relative z-10 flex items-center gap-3">
+                            DOWNLOAD RESUME
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                            </svg>
+                        </span>
+                    </a>
                 </div>
             </div>
         </section>
@@ -479,81 +571,246 @@
         <section id="agents" class="min-h-screen flex flex-col justify-center px-8 md:px-24 mb-20">
             <div class="max-w-7xl w-full mx-auto">
                 <div class="flex items-end justify-between mb-8">
-                    <h2 class="valorant-font text-6xl md:text-[120px] leading-none hover-glitch cursor-default">DOSSIERS
+                    <h2 class="valorant-font text-5xl md:text-[120px] leading-none hover-glitch cursor-default">DOSSIERS
                     </h2>
                     <div class="flex flex-col items-end mono-font text-[10px] text-white/30 space-y-1 pb-4">
-                        <span>SEARCHING_BIOMETRICS...</span>
+                        <span class="loading-dots">SEARCHING_BIOMETRICS</span>
                         <span class="text-[#4cc9f0]">TARGET_LOCKED</span>
                     </div>
                 </div>
                 <div class="h-1 w-full bg-gradient-to-r from-red-500 via-red-500/50 to-transparent mb-16"></div>
 
                 <div class="grid md:grid-cols-2 gap-16">
-                    <!-- Agent Card JETT -->
+                    <!-- Card 1: SKILLS -->
                     <div
                         class="border-bracket bracket-tl bracket-tr p-12 bg-white/[0.02] backdrop-blur-xl group hover:bg-white/[0.05] transition-all duration-700 cursor-default relative overflow-hidden">
                         <div class="card-scanner"></div>
                         <div class="flex items-center gap-4 mb-8">
                             <div class="w-16 h-[2px] bg-[#ff4655] group-hover:w-24 transition-all duration-500"></div>
-                            <span class="text-[#ff4655] font-black text-xs tracking-[0.4em] uppercase">Entry
-                                Specialist</span>
+                            <span
+                                class="text-[#ff4655] font-black text-xs tracking-[0.4em] uppercase">Technical_Profile</span>
                         </div>
                         <h3
-                            class="text-6xl font-black mb-8 uppercase italic group-hover:translate-x-6 transition-transform duration-500">
-                            JETT</h3>
-                        <p
-                            class="text-gray-400 text-base leading-relaxed mb-12 group-hover:text-white transition-colors duration-500">
-                            Equipped with wind-based abilities, Jett specializes in rapid entry and vertical movement,
-                            making her a primary threat in skirmish scenarios.
-                        </p>
+                            class="text-4xl md:text-6xl font-black mb-8 uppercase italic group-hover:translate-x-6 transition-transform duration-500">
+                            SKILLS</h3>
+                        <div
+                            class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-400 text-sm mono-font mb-12 group-hover:text-white transition-colors duration-500">
+                            <ul class="space-y-2">
+                                <li class="flex items-center gap-2"><span class="text-[#ff4655]">▶</span> C/C++/C#</li>
+                                <li class="flex items-center gap-2"><span class="text-[#ff4655]">▶</span> JAVA/PYTHON
+                                </li>
+                                <li class="flex items-center gap-2"><span class="text-[#ff4655]">▶</span> PHP/HTML/CSS
+                                </li>
+                            </ul>
+                            <ul class="space-y-2">
+                                <li class="flex items-center gap-2"><span class="text-[#ff4655]">▶</span> .NET/CI4</li>
+                                <li class="flex items-center gap-2"><span class="text-[#ff4655]">▶</span> MYSQL/PL/SQL
+                                </li>
+                                <li class="flex items-center gap-2"><span class="text-[#ff4655]">▶</span> DSA/BOOTSTRAP
+                                </li>
+                            </ul>
+                        </div>
                         <div class="flex flex-col gap-4">
-                            <button onclick="getAgentStrategy('Jett')"
+                            <button onclick="getAgentStrategy('Skills')"
                                 class="w-full border-2 border-[#ff4655] py-4 bg-red-500/5 hover:bg-red-500 transition-all font-black text-xs tracking-[0.4em] uppercase">
-                                Tactical_Intelligence ✨
+                                Full_Stack_Dossier ✨
                             </button>
-                            <div class="flex gap-4">
-                                <div
-                                    class="w-14 h-14 border border-white/10 flex items-center justify-center font-black text-xl hover:bg-[#ff4655] hover:border-[#ff4655] transition-all cursor-pointer">
-                                    Q</div>
-                                <div
-                                    class="w-14 h-14 border border-white/10 flex items-center justify-center font-black text-xl hover:bg-[#ff4655] hover:border-[#ff4655] transition-all cursor-pointer">
-                                    E</div>
-                            </div>
                         </div>
                     </div>
 
-                    <!-- Agent Card OMEN -->
+                    <!-- Card 2: EXPERIENCE -->
                     <div
                         class="border-bracket bracket-tl bracket-tr p-12 bg-white/[0.02] backdrop-blur-xl group hover:bg-white/[0.05] transition-all duration-700 cursor-default relative overflow-hidden">
                         <div class="card-scanner"
                             style="background: var(--val-blue); box-shadow: 0 0 15px var(--val-blue);"></div>
                         <div class="flex items-center gap-4 mb-8">
                             <div class="w-16 h-[2px] bg-[#4cc9f0] group-hover:w-24 transition-all duration-500"></div>
-                            <span class="text-[#4cc9f0] font-black text-xs tracking-[0.4em] uppercase">Vision
-                                Control</span>
+                            <span
+                                class="text-[#4cc9f0] font-black text-xs tracking-[0.4em] uppercase">Operational_History</span>
                         </div>
                         <h3
-                            class="text-6xl font-black mb-8 uppercase italic group-hover:translate-x-6 transition-transform duration-500">
-                            OMEN</h3>
+                            class="text-4xl md:text-6xl font-black mb-8 uppercase italic group-hover:translate-x-6 transition-transform duration-500">
+                            EXPERIENCE</h3>
                         <p
                             class="text-gray-400 text-base leading-relaxed mb-12 group-hover:text-white transition-colors duration-500">
-                            Manipulating the field of vision through paranoia and dark cover, Omen thrives in
-                            misdirecting hostiles through trans-dimensional movement.
+                            <span class="text-white font-bold block mb-2">WEB DEVELOPER INTERN</span>
+                            Abhinav Digicompsoft Service Pvt Ltd (6 months)<br>
+                            Developed web applications using PHP and CodeIgniter 4, focusing on backend logic and API
+                            integration.
                         </p>
                         <div class="flex flex-col gap-4">
-                            <button onclick="getAgentStrategy('Omen')"
+                            <button onclick="getAgentStrategy('Experience')"
                                 class="w-full border-2 border-[#4cc9f0] py-4 bg-blue-500/5 hover:bg-blue-500 transition-all font-black text-xs tracking-[0.4em] uppercase">
-                                Tactical_Intelligence ✨
+                                Mission_Briefing ✨
                             </button>
-                            <div class="flex gap-4">
-                                <div
-                                    class="w-14 h-14 border border-white/10 flex items-center justify-center font-black text-xl hover:bg-[#4cc9f0] hover:border-[#4cc9f0] transition-all cursor-pointer">
-                                    Q</div>
-                                <div
-                                    class="w-14 h-14 border border-white/10 flex items-center justify-center font-black text-xl hover:bg-[#4cc9f0] hover:border-[#4cc9f0] transition-all cursor-pointer">
-                                    E</div>
-                            </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Missions (Projects) -->
+        <section id="projects" class="py-20 flex flex-col justify-center px-8 md:px-24 mb-20">
+            <div class="max-w-7xl w-full mx-auto">
+                <div class="flex items-end justify-between mb-8">
+                    <h2 class="valorant-font text-5xl md:text-[120px] leading-none hover-glitch cursor-default">MISSIONS
+                    </h2>
+                    <div class="flex flex-col items-end mono-font text-[10px] text-white/30 space-y-1 pb-4">
+                        <span class="loading-dots">ACTIVE_DEPLOYMENTS</span>
+                        <span class="text-[#ff4655]">LOAD_COMPLETE</span>
+                    </div>
+                </div>
+                <div class="h-1 w-full bg-gradient-to-r from-red-500 via-red-500/50 to-transparent mb-16"></div>
+
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <!-- Project 1 -->
+                    <div
+                        class="border border-white/10 p-6 bg-white/[0.02] hover:bg-white/[0.05] transition-all group relative overflow-hidden">
+                        <div class="card-scanner"></div>
+                        <span class="mono-font text-[9px] text-[#ff4655] block mb-2">// 01_YOGA_APP</span>
+                        <h4 class="text-xl font-black mb-4 uppercase italic">YOGA WEB APP</h4>
+                        <p class="text-[11px] text-gray-400 mb-6 group-hover:text-white transition-colors">Platform to
+                            choose exercises, track sessions, and enhance practice.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="text-[9px] border border-white/20 px-2 py-1 mono-font">HTML/CSS</span>
+                            <span class="text-[9px] border border-white/20 px-2 py-1 mono-font">PHP</span>
+                        </div>
+                    </div>
+                    <!-- Project 2 -->
+                    <div
+                        class="border border-white/10 p-6 bg-white/[0.02] hover:bg-white/[0.05] transition-all group relative overflow-hidden">
+                        <div class="card-scanner"></div>
+                        <span class="mono-font text-[9px] text-[#ff4655] block mb-2">// 02_FOOD_SWIFT</span>
+                        <h4 class="text-xl font-black mb-4 uppercase italic">HUNGRY SWIFT</h4>
+                        <p class="text-[11px] text-gray-400 mb-6 group-hover:text-white transition-colors">Online food
+                            delivery system with menu browsing and ordering logic.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="text-[9px] border border-white/20 px-2 py-1 mono-font">JS/PHP</span>
+                            <span class="text-[9px] border border-white/20 px-2 py-1 mono-font">MYSQL</span>
+                        </div>
+                    </div>
+                    <!-- Project 3 -->
+                    <div
+                        class="border border-white/10 p-6 bg-white/[0.02] hover:bg-white/[0.05] transition-all group relative overflow-hidden">
+                        <div class="card-scanner"></div>
+                        <span class="mono-font text-[9px] text-[#ff4655] block mb-2">// 03_WEATHER_INTEL</span>
+                        <h4 class="text-xl font-black mb-4 uppercase italic">WEATHER APP</h4>
+                        <p class="text-[11px] text-gray-400 mb-6 group-hover:text-white transition-colors">Real-time
+                            weather updates using API integration for live tracking.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="text-[9px] border border-white/20 px-2 py-1 mono-font">API</span>
+                            <span class="text-[9px] border border-white/20 px-2 py-1 mono-font">VANILLA_JS</span>
+                        </div>
+                    </div>
+                    <!-- Project 4 -->
+                    <div
+                        class="border border-white/10 p-6 bg-white/[0.02] hover:bg-white/[0.05] transition-all group relative overflow-hidden">
+                        <div class="card-scanner"></div>
+                        <span class="mono-font text-[9px] text-[#ff4655] block mb-2">// 04_BRAIN_BOOSTER</span>
+                        <h4 class="text-xl font-black mb-4 uppercase italic">CODING QUIZ</h4>
+                        <p class="text-[11px] text-gray-400 mb-6 group-hover:text-white transition-colors">Interactive
+                            platform for problem-solving and coding challenges.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="text-[9px] border border-white/20 px-2 py-1 mono-font">JAVA</span>
+                            <span class="text-[9px] border border-white/20 px-2 py-1 mono-font">HTML/JS</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Academy (Education) -->
+        <section id="academy" class="py-20 flex flex-col justify-center px-8 md:px-24 mb-20">
+            <div class="max-w-7xl w-full mx-auto">
+                <div class="flex items-center gap-6 mb-12">
+                    <h2 class="valorant-font text-5xl md:text-8xl hover-glitch">ACADEMY</h2>
+                    <div class="h-[2px] flex-grow bg-white/10 relative">
+                        <div class="absolute inset-0 bg-[#ff4655] w-1/3"></div>
+                    </div>
+                </div>
+
+                <div class="grid gap-4 mono-font">
+                    <div
+                        class="flex flex-col md:flex-row md:items-center gap-4 md:gap-8 border-l-2 border-white/10 pl-6 md:pl-8 py-4 hover:border-[#ff4655] transition-colors group">
+                        <span class="text-[#ff4655] font-black text-lg md:text-xl shrink-0">2024-PRES</span>
+                        <div>
+                            <h5 class="text-white font-bold uppercase tracking-widest text-sm md:text-base">MCA (Master of Computer
+                                Application)</h5>
+                            <p class="text-[9px] md:text-[10px] text-white/40 uppercase">Savitribai Phule Pune University | Last Year
+                                (Ongoing)</p>
+                        </div>
+                    </div>
+                    <div
+                        class="flex items-center gap-8 border-l-2 border-white/10 pl-8 py-4 hover:border-[#ff4655] transition-colors group">
+                        <span class="text-[#ff4655] font-black text-xl">2021-2024</span>
+                        <div>
+                            <h5 class="text-white font-bold uppercase tracking-widest">BBA (Computer Application)</h5>
+                            <p class="text-[10px] text-white/40 uppercase">Sarhad College of Arts, Commerce, and Science
+                                | 85% Marks</p>
+                        </div>
+                    </div>
+                    <div
+                        class="flex flex-col md:flex-row md:items-center gap-4 md:gap-8 border-l-2 border-white/10 pl-6 md:pl-8 py-4 hover:border-[#ff4655] transition-colors group">
+                        <span class="text-[#ff4655] font-black text-lg md:text-xl shrink-0">2021</span>
+                        <div>
+                            <h5 class="text-white font-bold uppercase tracking-widest text-sm md:text-base">Higher Secondary Certificate</h5>
+                            <p class="text-[9px] md:text-[10px] text-white/40 uppercase">Rajgad College of Arts, Commerce, and Science
+                                | 76% Marks</p>
+                        </div>
+                    </div>
+                    <div
+                        class="flex flex-col md:flex-row md:items-center gap-4 md:gap-8 border-l-2 border-white/10 pl-6 md:pl-8 py-4 hover:border-[#ff4655] transition-colors group">
+                        <span class="text-[#ff4655] font-black text-lg md:text-xl shrink-0">2019</span>
+                        <div>
+                            <h5 class="text-white font-bold uppercase tracking-widest text-sm md:text-base">Central Board of Secondary
+                                Education</h5>
+                            <p class="text-[9px] md:text-[10px] text-white/40 uppercase">Abhinav English Medium School | 52% Marks</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Recon (Extra-Curricular) -->
+        <section id="recon" class="py-20 flex flex-col justify-center px-8 md:px-24 mb-20">
+            <div class="max-w-7xl w-full mx-auto">
+                <div class="flex items-end justify-between mb-8">
+                    <h2 class="valorant-font text-5xl md:text-[120px] leading-none hover-glitch cursor-default">RECON
+                    </h2>
+                    <div class="flex flex-col items-end mono-font text-[10px] text-white/30 space-y-1 pb-4">
+                        <span class="loading-dots">FIELD_ACTIVITIES</span>
+                        <span class="text-[#4cc9f0]">DATA_LOGGED</span>
+                    </div>
+                </div>
+                <div class="h-1 w-full bg-gradient-to-r from-blue-500 via-blue-500/50 to-transparent mb-16"></div>
+
+                <div class="grid md:grid-cols-3 gap-8 mono-font">
+                    <div
+                        class="border-bracket bracket-tl bracket-tr p-8 bg-white/[0.02] hover:bg-white/[0.05] transition-all group">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-2 h-2 bg-[#4cc9f0]"></div>
+                            <h4 class="text-[#4cc9f0] font-black uppercase">CODING</h4>
+                        </div>
+                        <p class="text-xs text-gray-400 group-hover:text-white transition-colors">Participated in
+                            multiple intercollege coding competitions, solving complex algorithmic challenges.</p>
+                    </div>
+                    <div
+                        class="border-bracket bracket-tl bracket-tr p-8 bg-white/[0.02] hover:bg-white/[0.05] transition-all group">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-2 h-2 bg-[#4cc9f0]"></div>
+                            <h4 class="text-[#4cc9f0] font-black uppercase">AWARDS</h4>
+                        </div>
+                        <p class="text-xs text-gray-400 group-hover:text-white transition-colors">Secured 3rd Runner-up
+                            position in Project Presentation at university level.</p>
+                    </div>
+                    <div
+                        class="border-bracket bracket-tl bracket-tr p-8 bg-white/[0.02] hover:bg-white/[0.05] transition-all group">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-2 h-2 bg-[#4cc9f0]"></div>
+                            <h4 class="text-[#4cc9f0] font-black uppercase">ATHLETICS</h4>
+                        </div>
+                        <p class="text-xs text-gray-400 group-hover:text-white transition-colors">Won a Bronze Medal in
+                            Judo School Olympics, demonstrating discipline and focus.</p>
                     </div>
                 </div>
             </div>
@@ -567,10 +824,10 @@
             </div>
             <div class="container mx-auto px-8 text-center relative z-10">
                 <h2
-                    class="valorant-font text-7xl md:text-[180px] mb-12 leading-none select-none group-hover:scale-105 transition-transform duration-1000 italic">
+                    class="valorant-font text-6xl md:text-[180px] mb-12 leading-none select-none group-hover:scale-105 transition-transform duration-1000 italic">
                     READY?</h2>
                 <button
-                    class="bg-[#0f1923] text-white px-24 py-10 font-black uppercase tracking-[0.5em] text-2xl skew-btn hover:bg-white hover:text-[#ff4655] transition-all duration-300 relative group/btn overflow-hidden">
+                    class="bg-[#0f1923] text-white px-12 md:px-24 py-6 md:py-10 font-black uppercase tracking-[0.5em] text-xl md:text-2xl skew-btn hover:bg-white hover:text-[#ff4655] transition-all duration-300 relative group/btn overflow-hidden">
                     <span class="skew-inner relative z-10">JOIN NOW</span>
                     <div
                         class="absolute inset-0 bg-white/30 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700 skew-x-[-12deg]">
@@ -580,28 +837,30 @@
         </section>
 
         <!-- Footer -->
-        <footer class="bg-[#0f1923] py-32 px-8 border-t border-white/5 relative z-10">
-            <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-16">
-                <div class="flex items-center gap-10">
-                    <svg class="w-16 h-16 fill-white/10 hover:fill-[#ff4655] transition-all cursor-pointer hover:scale-110"
+        <footer class="bg-[#0f1923] py-20 md:py-32 px-8 border-t border-white/5 relative z-10">
+            <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-12 md:gap-16">
+                <div class="flex items-center gap-6 md:gap-10">
+                    <svg class="w-12 h-12 md:w-16 md:h-16 fill-white/10 hover:fill-[#ff4655] transition-all cursor-pointer hover:scale-110"
                         viewBox="0 0 100 100">
                         <path d="M10 20 L45 20 L35 80 L0 80 Z" />
                         <path d="M55 20 L90 20 L100 80 L65 80 Z" />
                     </svg>
-                    <div class="mono-font border-l border-white/10 pl-8">
-                        <p class="text-[11px] font-bold text-white/20 uppercase tracking-[0.3em] mb-2">© 2024 RIOT
-                            GAMES, INC.</p>
-                        <p class="text-[9px] font-black text-[#ff4655] uppercase tracking-[0.6em]">
-                            SYSTEM_VERSION_ALPHA_v1.0</p>
+                    <div class="mono-font border-l border-white/10 pl-6 md:pl-8">
+                        <p class="text-[9px] md:text-[11px] font-bold text-white/20 uppercase tracking-[0.3em] mb-2">© 2026 SAHIL
+                            MARAL.</p>
+                        <p class="text-[8px] md:text-[9px] font-black text-[#ff4655] uppercase tracking-[0.6em]">
+                            PORTFOLIO_v1.0_PROD</p>
                     </div>
                 </div>
-                <div class="flex gap-16 text-[11px] font-black uppercase tracking-widest text-white/40">
-                    <a href="#"
-                        class="hover:text-[#ff4655] transition-colors border-b-2 border-transparent hover:border-[#ff4655] pb-2">Privacy</a>
-                    <a href="#"
-                        class="hover:text-[#ff4655] transition-colors border-b-2 border-transparent hover:border-[#ff4655] pb-2">Terms</a>
-                    <a href="#"
-                        class="hover:text-[#ff4655] transition-colors border-b-2 border-transparent hover:border-[#ff4655] pb-2">Support</a>
+                <div class="flex flex-wrap justify-center gap-8 md:gap-16 text-[10px] md:text-[11px] font-black uppercase tracking-widest text-white/40">
+                    <a href="mailto:sahilmaral14@gmail.com"
+                        class="hover:text-[#ff4655] transition-colors border-b-2 border-transparent hover:border-[#ff4655] pb-2">Email</a>
+                    <a href="https://linkedin.com/in/sahil-maral" target="_blank"
+                        class="hover:text-[#ff4655] transition-colors border-b-2 border-transparent hover:border-[#ff4655] pb-2">LinkedIn</a>
+                    <a href="SAHIL_MARAL_.pdf" target="_blank"
+                        class="hover:text-[#ff4655] transition-colors border-b-2 border-transparent hover:border-[#ff4655] pb-2">Resume</a>
+                    <a href="tel:+919370245992"
+                        class="hover:text-[#ff4655] transition-colors border-b-2 border-transparent hover:border-[#ff4655] pb-2">Contact</a>
                 </div>
             </div>
         </footer>
@@ -612,6 +871,10 @@
 
         // --- GEMINI API INTEGRATION ---
         async function fetchGemini(prompt, systemInstruction = "You are V.E.R.A., a professional VALORANT tactical assistant. Provide concise, high-impact tactical advice in a military/tech briefing style. Use all-caps for emphasis. Maximum 4 short bullet points.") {
+            if (!apiKey) {
+                console.warn("[V.E.R.A.]: API key not found. AI features will be disabled.");
+                return "API_KEY_MISSING: PLEASE CONFIGURE MARAL_PROTOCOL_KEY.";
+            }
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
 
             const payload = {
@@ -650,7 +913,8 @@
             isChatOpen = !isChatOpen;
 
             if (isChatOpen) {
-                container.style.height = '400px';
+                const isMobile = window.innerWidth <= 768;
+                container.style.height = isMobile ? '75vh' : '400px';
                 container.style.opacity = '1';
                 container.style.marginTop = '12px';
                 arrow.style.transform = 'rotate(180deg)';
@@ -712,6 +976,43 @@
             modal.classList.remove('invisible');
             modal.classList.add('opacity-100');
             content.innerHTML = `<div class="loading-dots uppercase">ACCESSING_ENCRYPTED_DATA</div>`;
+
+            // Hardcoded responses for Sahil's profile
+            if (agentName === 'Skills') {
+                setTimeout(() => {
+                    content.innerHTML = `
+                        <div class="space-y-4">
+                            <p class="text-[#ff4655] font-black underline uppercase tracking-widest">SUBJECT: TECHNICAL_DOSSIER</p>
+                            <p class="text-white">SAHIL MARAL EXHIBITS HIGH PROFICIENCY IN FULL-STACK ARCHITECTURE.</p>
+                            <ul class="space-y-2 text-gray-300">
+                                <li class="flex items-center gap-2"><span class="text-[#ff4655]">▶</span> CORE LANGUAGES: JAVA, PYTHON, C#, PHP</li>
+                                <li class="flex items-center gap-2"><span class="text-[#ff4655]">▶</span> FRAMEWORKS: .NET, CODEIGNITER 4, BOOTSTRAP 5</li>
+                                <li class="flex items-center gap-2"><span class="text-[#ff4655]">▶</span> DATABASE: MYSQL, PL/SQL OPTIMIZATION</li>
+                                <li class="flex items-center gap-2"><span class="text-[#ff4655]">▶</span> CAPABILITIES: DATA STRUCTURES, ALGORITHMS, WEB SECURITY</li>
+                            </ul>
+                        </div>
+                    `;
+                }, 1000);
+                return;
+            }
+
+            if (agentName === 'Experience') {
+                setTimeout(() => {
+                    content.innerHTML = `
+                        <div class="space-y-4">
+                            <p class="text-[#4cc9f0] font-black underline uppercase tracking-widest">SUBJECT: MISSION_LOG_01</p>
+                            <p class="text-white">INTERNSHIP AT ABHINAV DIGICOMPSOFT SERVICE PVT LTD.</p>
+                            <ul class="space-y-2 text-gray-300">
+                                <li class="flex items-center gap-2"><span class="text-[#4cc9f0]">▶</span> DURATION: 6 MONTHS (OPERATIONAL)</li>
+                                <li class="flex items-center gap-2"><span class="text-[#4cc9f0]">▶</span> TECH STACK: PHP, CI4, AJAX, API INTEGRATION</li>
+                                <li class="flex items-center gap-2"><span class="text-[#4cc9f0]">▶</span> KEY TASKS: BACKEND ARCHITECTURE, DATABASE MANAGEMENT</li>
+                                <li class="flex items-center gap-2"><span class="text-[#4cc9f0]">▶</span> OUTCOME: SUCCESSFUL DEPLOYMENT OF DYNAMIC APPLICATIONS</li>
+                            </ul>
+                        </div>
+                    `;
+                }, 1000);
+                return;
+            }
 
             try {
                 const prompt = `Provide a unique pro-level tactical play or secret tip for the agent ${agentName}. Mention a specific map if possible.`;
@@ -830,6 +1131,9 @@
             }, 100);
 
             document.addEventListener('mousemove', (e) => {
+                // Skip reticle updates on touch devices or if hidden
+                if (window.matchMedia("(max-width: 768px)").matches || window.matchMedia("(hover: none)").matches) return;
+
                 targetX = (e.clientX / window.innerWidth - 0.5) * 2;
                 targetY = (e.clientY / window.innerHeight - 0.5) * 2;
                 reticleEl.style.left = e.clientX - 22 + 'px';
